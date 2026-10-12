@@ -1,0 +1,326 @@
+
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cloud Student Tasks</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background: linear-gradient(135deg, #dbeafe, #f1f5f9);
+    margin: 0;
+    min-height: 100vh;
+    padding: 35px 16px;
+    color: #1e293b;
+}
+
+.container {
+    max-width: 700px;
+    margin: 25px auto;
+    padding: 30px;
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 12px 35px #1e40af18;
+}
+
+h1 {
+    color: #2563eb;
+    margin-bottom: 8px;
+    font-size: 30px;
+}
+
+.description {
+    color: #64748b;
+    margin-bottom: 25px;
+}
+
+.form {
+    display: flex;
+    gap: 10px;
+}
+
+input[type="text"] {
+    flex: 1;
+    min-width: 0;
+    padding: 13px;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    font-size: 15px;
+}
+
+button {
+    border: none;
+    border-radius: 9px;
+    padding: 12px 17px;
+    background: #2563eb;
+    color: white;
+    cursor: pointer;
+    font-weight: bold;
+    transition: 0.2s;
+}
+
+button:hover {
+    opacity: 0.85;
+    transform: translateY(-1px);
+}
+
+.stats {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin: 22px 0;
+}
+
+.stat-card {
+    flex: 1;
+    min-width: 120px;
+    padding: 15px;
+    border-radius: 12px;
+    background: #eff6ff;
+}
+
+.stat-card strong {
+    display: block;
+    font-size: 25px;
+    color: #2563eb;
+    margin-top: 6px;
+}
+
+#taskList {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+#taskList li {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 15px 10px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+#taskList li span {
+    flex: 1;
+    overflow-wrap: anywhere;
+}
+
+#taskList li.done span {
+    text-decoration: line-through;
+    color: #94a3b8;
+}
+
+#taskList input[type="checkbox"] {
+    width: 19px;
+    height: 19px;
+    cursor: pointer;
+    accent-color: #2563eb;
+}
+
+.delete {
+    background: #ef4444;
+    padding: 9px 12px;
+}
+
+.empty {
+    text-align: center;
+    color: #94a3b8;
+    padding: 25px 0;
+}
+
+footer {
+    text-align: center;
+    color: #94a3b8;
+    font-size: 13px;
+    margin-top: 25px;
+}
+
+@media (max-width: 480px) {
+    .container {
+        padding: 20px;
+        margin: 5px auto;
+    }
+
+    h1 {
+        font-size: 24px;
+    }
+
+    .form {
+        flex-direction: column;
+    }
+
+    .form button {
+        width: 100%;
+    }
+
+    #taskList li {
+        gap: 8px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<main class="container">
+    <h1>☁️ Cloud Student Tasks</h1>
+    <p class="description">
+        Студенттердің оқу тапсырмаларын басқару жүйесі
+    </p>
+
+    <form id="taskForm" class="form">
+        <input
+            type="text"
+            id="taskInput"
+            placeholder="Жаңа тапсырма енгізіңіз..."
+            maxlength="150"
+            required
+        >
+        <button type="submit">+ Қосу</button>
+    </form>
+
+    <div class="stats">
+        <div class="stat-card">
+            Барлық тапсырма
+            <strong id="totalCount">0</strong>
+        </div>
+
+        <div class="stat-card">
+            Орындалды
+            <strong id="doneCount">0</strong>
+        </div>
+
+        <div class="stat-card">
+            Қалғаны
+            <strong id="remainingCount">0</strong>
+        </div>
+    </div>
+
+    <ul id="taskList"></ul>
+
+    <footer>
+        Cloud Student Tasks | HTML, CSS, JavaScript
+    </footer>
+</main>
+
+<script>
+const form = document.getElementById("taskForm");
+const input = document.getElementById("taskInput");
+const list = document.getElementById("taskList");
+
+const totalCount = document.getElementById("totalCount");
+const doneCount = document.getElementById("doneCount");
+const remainingCount = document.getElementById("remainingCount");
+
+let tasks = [];
+
+try {
+    const savedTasks = localStorage.getItem("cloudStudentTasks");
+    const parsedTasks = savedTasks ? JSON.parse(savedTasks) : [];
+
+    if (Array.isArray(parsedTasks)) {
+        tasks = parsedTasks.filter(task =>
+            task &&
+            typeof task.text === "string" &&
+            typeof task.done === "boolean"
+        );
+    }
+} catch (error) {
+    tasks = [];
+}
+
+function saveTasks() {
+    try {
+        localStorage.setItem(
+            "cloudStudentTasks",
+            JSON.stringify(tasks)
+        );
+    } catch (error) {
+        alert("Тапсырмаларды сақтау мүмкін болмады.");
+    }
+}
+
+function renderTasks() {
+    list.replaceChildren();
+
+    if (tasks.length === 0) {
+        const empty = document.createElement("li");
+        empty.className = "empty";
+        empty.textContent = "Әзірге тапсырмалар жоқ. Жаңасын қосыңыз!";
+        list.appendChild(empty);
+    }
+
+    tasks.forEach((task, index) => {
+        const li = document.createElement("li");
+
+        if (task.done) {
+            li.classList.add("done");
+        }
+
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.checked = task.done;
+        checkbox.setAttribute("aria-label", "Орындалды деп белгілеу");
+
+        checkbox.addEventListener("change", () => {
+            tasks[index].done = checkbox.checked;
+            saveTasks();
+            renderTasks();
+        });
+
+        const text = document.createElement("span");
+        text.textContent = task.text;
+
+        const deleteButton = document.createElement("button");
+        deleteButton.className = "delete";
+        deleteButton.textContent = "Жою";
+
+        deleteButton.addEventListener("click", () => {
+            tasks.splice(index, 1);
+            saveTasks();
+            renderTasks();
+        });
+
+        li.append(checkbox, text, deleteButton);
+        list.appendChild(li);
+    });
+
+    const completed = tasks.filter(task => task.done).length;
+
+    totalCount.textContent = tasks.length;
+    doneCount.textContent = completed;
+    remainingCount.textContent = tasks.length - completed;
+}
+
+form.addEventListener("submit", event => {
+    event.preventDefault();
+
+    const text = input.value.trim();
+
+    if (!text) {
+        return;
+    }
+
+    tasks.push({
+        text: text,
+        done: false
+    });
+
+    saveTasks();
+    renderTasks();
+
+    input.value = "";
+    input.focus();
+});
+
+renderTasks();
+</script>
+
+</body>
+</html>
